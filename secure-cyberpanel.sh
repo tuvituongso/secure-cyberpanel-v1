@@ -11,14 +11,14 @@ echo "🧱 Cấu hình tường lửa UFW..."
 apt install ufw -y
 ufw default deny incoming
 ufw default allow outgoing
-ufw allow 22/tcp
-ufw allow 443/tcp
-ufw allow 80/tcp
-ufw allow 8090/tcp
-ufw allow 21/tcp
-ufw allow 40110:40210/tcp
-ufw allow 25,587/tcp
-ufw allow 110,143,993,995/tcp
+ufw allow 2222/tcp        # SSH mới
+ufw allow 443/tcp         # HTTPS
+ufw allow 80/tcp          # HTTP
+ufw allow 8090/tcp        # CyberPanel Admin
+ufw allow 21/tcp          # FTP
+ufw allow 40110:40210/tcp # FTP passive ports
+ufw allow 25,587/tcp      # Email (Postfix)
+ufw allow 110,143,993,995/tcp  # IMAP/POP3
 ufw enable
 
 # 3. Cài Fail2Ban chống brute-force
@@ -27,7 +27,7 @@ apt install fail2ban -y
 cat > /etc/fail2ban/jail.local <<EOF
 [sshd]
 enabled = true
-port = ssh
+port = 2222
 logpath = %(sshd_log)s
 backend = systemd
 maxretry = 5
@@ -50,9 +50,10 @@ EOF
 
 systemctl restart fail2ban
 
-# 4. Vô hiệu hóa root login SSH
-echo "🔒 Tắt đăng nhập root SSH..."
-sed -i 's/^PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
+# 4. Đổi cổng SSH thành 2222 (KHÔNG tắt đăng nhập root)
+echo "🔒 Đổi cổng SSH thành 2222 (không tắt root)..."
+sed -i 's/^#Port .*/Port 2222/' /etc/ssh/sshd_config
+sed -i 's/^Port .*/Port 2222/' /etc/ssh/sshd_config
 systemctl restart sshd
 
 # 5. Cài đặt rkhunter phát hiện rootkit
@@ -80,4 +81,4 @@ sysctl -p
 echo "🙈 Ẩn server khỏi ping (ICMP)..."
 echo "1" > /proc/sys/net/ipv4/icmp_echo_ignore_all
 
-echo "✅ Đã hoàn tất bảo mật VPS. Hãy kiểm tra hoạt động của firewall và Fail2Ban."
+echo "✅ Đã hoàn tất bảo mật VPS. Vui lòng kiểm tra kết nối SSH mới qua cổng 2222."
